@@ -6,7 +6,25 @@ The referenced `C:\Users\Yawo Faustin AZIAKPO\Downloads\CST-570-RS-WeatherDataSe
 is on the original author's computer and is not included in this repository. No
 dataset values or model results have therefore been assumed or fabricated.
 
-## Run the analysis
+## Benchmark analysis (illustrative only)
+
+`weather_naive_bayes.py` runs a categorical Naive Bayes classifier with add-one
+smoothing and leave-one-out cross-validation on the commonly published 14-row
+Play Tennis benchmark. **This is not the course dataset** and its results are not an
+evaluation of the missing DOCX. To analyse the course data, replace the rows in
+`ROWS` (and adapt `SCHEMA` if needed) with the actual labeled observations.
+
+```sh
+python weather_naive_bayes.py
+```
+
+The command prints per-fold predictions and aggregate metrics (LOOCV accuracy 7/14 =
+50.0%, TP=6 FN=3 FP=4 TN=1, majority baseline 9/14 = 64.3%) and writes four SVG plots to
+`plots/`: `class_priors_and_smoothing.svg`, `loocv_predictions.svg`,
+`confusion_and_baseline.svg` and `feature_outcome_distribution.svg`. The write-up that
+references them is in [`report.md`](report.md). It makes no safety guarantee.
+
+## Generic CSV/DOCX analysis
 
 The input can be a CSV file or a DOCX containing a Word table. The first table row
 must contain unique column names; each subsequent row must contain one observation.
