@@ -1,9 +1,4 @@
-"""Categorical Naive Bayes on the commonly published 14-row Play Tennis benchmark.
-
-IMPORTANT: this is an illustrative benchmark. It is NOT the course dataset
-(CST-570-RS-WeatherDataSet.docx), which is not in this repository. To analyse the
-course data, replace the rows in ROWS (and, if needed, SCHEMA) with the actual
-labeled observations and re-run ``python weather_naive_bayes.py``.
+"""Categorical Naive Bayes on the supplied 14-row CST-570 weather dataset.
 
 Standard library only. Plots are written as SVG files to ``plots/``.
 """
@@ -13,33 +8,33 @@ from collections import Counter
 from pathlib import Path
 from xml.sax.saxutils import escape
 
-FEATURES = ("outlook", "temperature", "humidity", "wind")
+FEATURES = ("weather", "temperature", "humidity", "windy")
 TARGET = "play"
 SCHEMA = {
-    "outlook": ("sunny", "overcast", "rain"),
-    "temperature": ("hot", "mild", "cool"),
-    "humidity": ("high", "normal"),
-    "wind": ("weak", "strong"),
+    "weather": ("sunny", "overcast", "rainy"),
+    "temperature": ("above average", "average", "below average"),
+    "humidity": ("low", "high"),
+    "windy": ("calm", "windy"),
 }
 CLASSES = ("yes", "no")
 POSITIVE = "yes"
 
-# (outlook, temperature, humidity, wind, play)
+# (weather, temperature, humidity, windy, play)
 ROWS = [
-    ("sunny", "hot", "high", "weak", "no"),
-    ("sunny", "hot", "high", "strong", "no"),
-    ("overcast", "hot", "high", "weak", "yes"),
-    ("rain", "mild", "high", "weak", "yes"),
-    ("rain", "cool", "normal", "weak", "yes"),
-    ("rain", "cool", "normal", "strong", "no"),
-    ("overcast", "cool", "normal", "strong", "yes"),
-    ("sunny", "mild", "high", "weak", "no"),
-    ("sunny", "cool", "normal", "weak", "yes"),
-    ("rain", "mild", "normal", "weak", "yes"),
-    ("sunny", "mild", "normal", "strong", "yes"),
-    ("overcast", "mild", "high", "strong", "yes"),
-    ("overcast", "hot", "normal", "weak", "yes"),
-    ("rain", "mild", "high", "strong", "no"),
+    ("sunny", "above average", "low", "calm", "no"),
+    ("sunny", "above average", "low", "windy", "no"),
+    ("overcast", "above average", "low", "calm", "yes"),
+    ("rainy", "average", "low", "calm", "yes"),
+    ("rainy", "average", "high", "calm", "yes"),
+    ("rainy", "below average", "high", "windy", "no"),
+    ("overcast", "below average", "high", "windy", "yes"),
+    ("sunny", "below average", "low", "calm", "no"),
+    ("sunny", "average", "high", "calm", "yes"),
+    ("rainy", "below average", "high", "calm", "yes"),
+    ("sunny", "average", "low", "windy", "yes"),
+    ("overcast", "average", "low", "windy", "yes"),
+    ("overcast", "above average", "high", "calm", "yes"),
+    ("rainy", "average", "low", "windy", "no"),
 ]
 
 PLOT_FILES = (
@@ -163,25 +158,23 @@ YES_C, NO_C = "#4c9f70", "#d9695f"
 def plot_priors(rows, outdir):
     m = NaiveBayes().fit(rows)
     counts = [m.class_counts[c] for c in CLASSES]
-    n_yes, n_sun = m.class_counts["yes"], m.counts[("outlook", "sunny", "yes")]
-    k = len(SCHEMA["outlook"])
+    n_yes, n_sun = m.class_counts["yes"], m.counts[("weather", "sunny", "yes")]
+    k = len(SCHEMA["weather"])
     raw, smooth = n_sun / n_yes, m.cond("outlook", "sunny", "yes")
-    body = [_text(300, 24, "Class counts and priors (benchmark, n=%d)" % m.n, 14, "middle", "bold")]
+    body = [_text(300, 24, "Class counts and priors (CST-570 dataset, n=%d)" % m.n, 14, "middle", "bold")]
     body.append(_bars(60, 50, 220, 180, list(CLASSES), counts, [YES_C, NO_C], max(counts), str))
     for i, c in enumerate(CLASSES):
         body.append(_text(60 + 110 * i + 55, 262, "prior %d/%d = %.3f" % (counts[i], m.n, counts[i] / m.n), anchor="middle"))
     body.append(_bars(340, 50, 220, 180, ["raw %d/%d" % (n_sun, n_yes), "smoothed"],
                       [raw, smooth], ["#999999", "#4c78a8"], 0.5, lambda v: "%.3f" % v))
-    body.append(_text(450, 262, "P(sunny|yes) = (%d+1)/(%d+%d) = %.4f" % (n_sun, n_yes, k, smooth), anchor="middle"))
-    body.append(_text(300, 290, "Illustrative benchmark data, not the course dataset", 11, "middle", fill="#a00"))
+    body.append(_text(450, 262, "P(weather=sunny|yes) = (%d+1)/(%d+%d) = %.4f" % (n_sun, n_yes, k, smooth), anchor="middle"))
     (outdir / PLOT_FILES[0]).write_text(_svg(620, 300, "".join(body)), encoding="utf-8")
 
 
 def plot_loocv(results, outdir):
     row_h, top = 24, 70
     h = top + row_h * len(results) + 30
-    body = [_text(350, 24, "LOOCV: each row held out once, model fit on the other 13", 14, "middle", "bold"),
-            _text(350, 44, "Illustrative benchmark data, not the course dataset", 11, "middle", fill="#a00")]
+    body = [_text(350, 24, "CST-570 LOOCV: each row held out once, fit on the other 13", 14, "middle", "bold")]
     for j, hd in enumerate(("fold", "held-out row", "actual", "predicted", "result")):
         body.append(_text((30, 90, 400, 470, 560)[j], top - 6, hd, weight="bold"))
     for i, (fold, row, pred, _s) in enumerate(results):
@@ -211,7 +204,6 @@ def plot_confusion(met, outdir):
     body.append(_bars(380, 70, 260, 200, ["LOOCV model", "majority (%s)" % met["majority_class"]],
                       [met["accuracy"], met["baseline_accuracy"]], ["#4c78a8", "#999999"], 1.0,
                       lambda v: "%.1f%%" % (100 * v)))
-    body.append(_text(350, 330, "Illustrative benchmark data, not the course dataset", 11, "middle", fill="#a00"))
     (outdir / PLOT_FILES[2]).write_text(_svg(700, 345, "".join(body)), encoding="utf-8")
 
 
@@ -230,7 +222,6 @@ def plot_features(rows, outdir):
         body.append(_rect(160, y, ny * scale, row_h - 4, YES_C))
         body.append(_rect(160 + ny * scale, y, nn * scale, row_h - 4, NO_C))
         body.append(_text(165 + (ny + nn) * scale, y + 14, "%d yes / %d no" % (ny, nn)))
-    body.append(_text(300, h - 10, "Illustrative benchmark data, not the course dataset", 11, "middle", fill="#a00"))
     (outdir / PLOT_FILES[3]).write_text(_svg(600, h, "".join(body)), encoding="utf-8")
 
 
@@ -246,8 +237,6 @@ def generate_plots(rows, results, met, outdir):
 
 def main(argv=None):
     outdir = Path(__file__).resolve().parent / "plots"
-    print("NOTE: illustrative 14-row Play Tennis benchmark; NOT the course dataset "
-          "(CST-570-RS-WeatherDataSet.docx is not available).")
     rows = list(ROWS)
     results = loocv(rows)
     met = metrics(rows, results)
@@ -261,8 +250,8 @@ def main(argv=None):
     print("Majority baseline (%s): %d/%d = %.1f%%" % (
         met["majority_class"], round(met["baseline_accuracy"] * met["n"]), met["n"], 100 * met["baseline_accuracy"]))
     full = NaiveBayes().fit(rows)
-    print("P(sunny|yes) = (%d+1)/(%d+%d) = %.4f" % (
-        full.counts[("outlook", "sunny", "yes")], full.class_counts["yes"], len(SCHEMA["outlook"]),
+    print("P(weather=sunny|yes) = (%d+1)/(%d+%d) = %.4f" % (
+        full.counts[("weather", "sunny", "yes")], full.class_counts["yes"], len(SCHEMA["weather"]),
         full.cond("outlook", "sunny", "yes")))
     for p in generate_plots(rows, results, met, outdir):
         print("Wrote", p)
