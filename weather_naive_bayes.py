@@ -160,7 +160,7 @@ def plot_priors(rows, outdir):
     counts = [m.class_counts[c] for c in CLASSES]
     n_yes, n_sun = m.class_counts["yes"], m.counts[("weather", "sunny", "yes")]
     k = len(SCHEMA["weather"])
-    raw, smooth = n_sun / n_yes, m.cond("outlook", "sunny", "yes")
+    raw, smooth = n_sun / n_yes, m.cond("weather", "sunny", "yes")
     body = [_text(300, 24, "Class counts and priors (CST-570 dataset, n=%d)" % m.n, 14, "middle", "bold")]
     body.append(_bars(60, 50, 220, 180, list(CLASSES), counts, [YES_C, NO_C], max(counts), str))
     for i, c in enumerate(CLASSES):
@@ -252,7 +252,7 @@ def main(argv=None):
     full = NaiveBayes().fit(rows)
     print("P(weather=sunny|yes) = (%d+1)/(%d+%d) = %.4f" % (
         full.counts[("weather", "sunny", "yes")], full.class_counts["yes"], len(SCHEMA["weather"]),
-        full.cond("outlook", "sunny", "yes")))
+        full.cond("weather", "sunny", "yes")))
     for p in generate_plots(rows, results, met, outdir):
         print("Wrote", p)
     return 0
